@@ -6,8 +6,7 @@ from pickle import *
 from sys import *
 
 
-if len
-(argv) != 3:
+if len(argv) != 3:
 	print(__doc__ % argv[0])
 	exit(1)
 
