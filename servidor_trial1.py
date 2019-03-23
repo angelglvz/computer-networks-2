@@ -1,23 +1,27 @@
 #!/usr/bin/python3.6
 # -*- coding: utf-8 -*-
+"Usage: %s <server> <port>"
 from socket import *
 from pickle import *
 from sys import *
 
-def handle(sock, msg, client, n):
-	print('New request', n, client)
-	time.sleep(1) # some job
-	sock.sendto(msg.upper(),client)
 
-if len(argv) != 2:
+if len(argv) != 3:
 	print(__doc__ % argv[0])
 	exit(1)
 
 sock = socket(AF_INET, SOCK_DGRAM)
-sock.bind(('', int(argv[1])))
 
-n = 0
 while 1:
-	msg, client = sock.recvfrom(1024)
-	n += 1
-	handle(sock, msg, client, n)
+	data = input().encode()
+
+	if not data: break
+
+	# ends with ''
+
+	sock.sendto(data, (argv[1], int(argv[2])))
+	msg, server = sock.recvfrom(1024)
+	print("Reply is '%s'" % msg.decode())
+
+sock.close()
+
