@@ -1,31 +1,27 @@
 #!/usr/bin/python3.6
 # -*- coding: utf-8 -*-
+"Usage: %s <server> <port>"
 from socket import *
 from pickle import *
 from sys import *
 
 
-def sending():
-	while 1:
-		
-def main():
-    f=open('ListinLlamadas','rb')
+if len(argv) != 3:
+	print(__doc__ % argv[0])
+	exit(1)
 
-    while True:
-        msg= f.read(12)
+sock = socket(AF_INET, SOCK_DGRAM)
 
-        print(struct.unpack('=2B2IH',msg))
+while 1:
+	data = input().encode()
 
-        sock = socket(AF_INET, SOCK_DGRAM)
+	if not data: break
 
-        sock.sendto(msg, ('', 12345))
-        sock.close()
+	# ends with ''
 
-        if not msg: break
+	sock.sendto(data, (argv[1], int(argv[2])))
+	msg, server = sock.recvfrom(1024)
+	print("Reply is '%s'" % msg.decode())
 
-if __name__ == '__main__':
-    try:
-        sys.exit(main())
-    except KeyboardInterrupt:
-        pass
+sock.close()
 
