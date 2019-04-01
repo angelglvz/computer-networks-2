@@ -6,6 +6,7 @@ from pickle import *
 from sys import *
 import struct
 import time
+import os
 
 def initialization_handler():
 	if len(argv)!= 3:
@@ -17,6 +18,7 @@ def initialization_handler():
 
 def request_handler(sock, msg, client, n):
 	print('New request: ', n, client)
+	time.sleep(1)
 	op = struct.unpack("!H", msg[0:2])[0]
 	filenameEnd = msg.find(0, 2)
 	filenameLen = filenameEnd - 2
@@ -25,7 +27,6 @@ def request_handler(sock, msg, client, n):
 	modeLen = modeEnd - (filenameEnd + 1)
 	mode = struct.unpack("!"+str(modeLen)+"s", msg[filenameEnd+1:modeEnd])[0].decode()
 	option_handler(op, filename)
-	time.sleep(1)
 
 def option_handler(option, filename):
 	if option == 1:
@@ -36,9 +37,20 @@ def option_handler(option, filename):
 		print("There is an error in the request of the client.")
 
 def read_request(filename):
+	path_name = "/home/raulbs/Documentos/"+filename
+	if os.path.isfile(path_name):
+		f=open(path_name,'rb')
+		bytestosend = f.read(1024)
+		sock.sendto(bytestosend, client)
+		while bytestosend != "":
+
+			bytestosend = f.read(1024)
+			sock.sendto(bytestosend, client)
+
 
 def write_request(filename):
-	
+	print("adsfsdf")
+
 initialization_handler()
 port = int(argv[2])
 sock = socket(AF_INET, SOCK_DGRAM)
