@@ -19,7 +19,7 @@ def initialization_handler():
 		exit(1)	
 
 def analyze(command):
-	sending = [int(n) for n in command.split()]
+	sending = command.split()
 	if sending[0].lower() == "read":
 		if len(sending) == 1: exit(1)
 		fileName = sending[1].encode()
@@ -51,12 +51,11 @@ port = int(argv[4])
 sock = socket(AF_INET, SOCK_DGRAM)
 
 while 1:
-	
 	command = input('TFTP@UDP> ')
 
 	if not command: break
 	analyze(command)
 	msg, server = sock.recvfrom(1024)
-	print(struct.unpack('!6s', msg))
+	print(msg.decode())
 
 sock.close()
