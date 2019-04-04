@@ -8,6 +8,17 @@ import struct
 import time
 import os
 
+server_error_msg = {
+    0: "Not defined, see error message (if any).",
+    1: "File not found.",
+    2: "Access violation.",
+    3: "Disk full or allocation exceeded.",
+    4: "Illegal TFTP operation.",
+    5: "Unknown transfer ID.",
+    6: "File already exists.",
+    7: "No such user."
+}
+
 def initialization_handler():
 	if len(argv)!= 3:
 		print(__doc__ % argv[0])
@@ -36,20 +47,30 @@ def option_handler(option, filename):
 	else:
 		print("There is an error in the request of the client.")
 
+def send_ack():
+	ack_msg = struct.pack('!HH', 4, 0)
+	sock.sendto(ack_msg, client)
+
+def send_error(code):
+	error_string = server_error_msg[code].encode()
+	error_msg = struct.pack('!HH'+str(len(error_string))+'sB', 5, code, error_string, 0)
+	sock.sendto(error_msg, client)
+
 def read_request(filename):
 	path_name = "/home/raulbs/Documentos/"+filename
 	if os.path.isfile(path_name):
 		f=open(path_name,'rb')
-		bytestosend = f.read(1024)
+		bytestosend = f.read(100)
 		sock.sendto(bytestosend, client)
-		while bytestosend != "":
-
-			bytestosend = f.read(1024)
-			sock.sendto(bytestosend, client)
-
+	else:
+		send_error(1)
 
 def write_request(filename):
-	print("adsfsdf")
+	path_name = "/home/raulbs/Documentos/"+filename
+	if os.path.isfile(path_name):
+		send_error(1)
+	else:
+		send_ack()
 
 initialization_handler()
 port = int(argv[2])
@@ -60,5 +81,5 @@ n = 0
 while 1:
 	msg, client = sock.recvfrom(1024)
 	n += 1
-	request_handler(sock, msg, client, n)
+	#request_handler(sock, msg, client, n)
 sock.close()	
