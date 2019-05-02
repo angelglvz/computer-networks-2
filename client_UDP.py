@@ -66,17 +66,77 @@ The operation introduced is not correct. The available operations are:
 	- quit
 		""")
 
+def receive_data(filename):
+	start_time = time.time()
+	path_name = "/home/angel/carpeta_publica_para_redes/cliente/"+filename
+	if os.path.isfile(path_name):
+		print('Error ',6,': ',server_error_msg[6])
+	else:
+		f=open(path_name,'w')
+		pack=0
+
+		try:
+			msg, server = sock.recvfrom(1024)
+		except socket.error:
+			send_read_request(filename)
+		else:
+			op = struct.unpack("!H", msg[0:2])[0]
+			
+			if op == 3:
+				packReceived = struct.unpack("!H", msg[2:4])[0]
+				print("Receiving from server: PACK ", packReceived)
+				if pack == packReceived:
+					pack += 1
+					size = len(msg)
+					dataLen = size - 4
+					data = struct.unpack("!"+str(dataLen)+"s", msg[4:size])[0]
+					f.write(data.decode())
+			elif op == 5:
+				error_server(msg)
+				return
+			else:
+				print("There was an error in the receiving packets\n")
+				return
+
+		while 1:
+			try:
+				send_ack(pack)
+				msg, server = sock.recvfrom(1024)
+		
+			except socket.error:
+				if pack == 0:
+					send_read_request(filename)
+			else:
+				op = struct.unpack("!H", msg[0:2])[0]
+		
+				if op == 3:
+					packReceived = struct.unpack("!H", msg[2:4])[0]
+					print("Receiving from server: PACK ", packReceived)
+					if pack == packReceived:
+						pack += 1
+						size = len(msg)
+						dataLen = size - 4
+						data = struct.unpack("!"+str(dataLen)+"s", msg[4:size])[0]
+						f.write(data.decode())
+						if len(data) < 512:
+							send_ack(pack)
+							return
+				elif op == 5:
+					error_server(msg)
+					break
+				else:
+					print("There was an error in the receiving packets\n")
+					break
+	print("--- %s seconds ---" % (time.time() - start_time))
 
 def send_write_request(filename):
 	data = struct.pack('!H'+str(len(filename))+'sB'+str(len(modes[0]))+'sB', TFTP_OPCODES['write'], filename.encode(), 0,modes[0].encode(), 0)
 		# ends with ''
-	print("Sending to server: WRQ of file '",filename,"'")
 	sock.sendto(data, (destination, port))
 
 def send_read_request(filename):
 	data = struct.pack('!H'+str(len(filename))+'sB'+str(len(modes[0]))+'sB', TFTP_OPCODES['read'], filename.encode(), 0,modes[0].encode(), 0)
 		# ends with ''
-	print("Sending to server: RRQ of file '",filename,"'")
 	sock.sendto(data, (destination, port))
 
 def send_data_pack(bytestosend, pack):
@@ -97,7 +157,8 @@ def error_server(msg):
 	print('Error ',error_code,': ',error_string)
 
 def send_data(filename):
-	path_name = "/home/raulbs/Descargas/"+filename
+	start_time = time.time()
+	path_name = "/home/angel/carpeta_publica_para_redes/cliente/"+filename
 	if os.path.isfile(path_name):
 		size = os.path.getsize (path_name) 
 		num_packs = math.ceil(size/512)
@@ -105,7 +166,7 @@ def send_data(filename):
 		f=open(path_name,'rb')
 		
 		try:
-			msg, server = sock.recvfrom(4)
+			msg, server = sock.recvfrom(1024)
 
 		except socket.error:
 			send_write_request(filename)
@@ -115,7 +176,6 @@ def send_data(filename):
 				packReceived = struct.unpack("!H", msg[2:4])[0]
 				print("Receiving from server: ACK ", packReceived)
 				bytestosend = f.read(512)
-				send_data_pack(bytestosend, packReceived)
 				pack += 1;
 			elif op == 5:
 				error_server(msg)
@@ -126,7 +186,8 @@ def send_data(filename):
 
 		while 1:
 			try:
-				msg, server = sock.recvfrom(4)
+				send_data_pack(bytestosend, packReceived)
+				msg, server = sock.recvfrom(1024)
 
 			except socket.error:
 				if pack == 0:
@@ -141,7 +202,6 @@ def send_data(filename):
 							break
 						else:
 							bytestosend = f.read(512)
-							send_data_pack(bytestosend, packReceived)
 							pack += 1
 					
 				elif op == 5:
@@ -150,74 +210,17 @@ def send_data(filename):
 				else:
 					print("There was an error in the receiving ACK\n")
 					break
+
 	else:
 		print('Error ',1,': ',server_error_msg[1])
+	print("--- %s seconds ---" % (time.time() - start_time))
 
-def receive_data(filename):
-	path_name = "/home/raulbs/Descargas/"+filename
-	if os.path.isfile(path_name):
-		print('Error ',6,': ',server_error_msg[6])
-	else:
-		f=open(path_name,'wb')
-		pack=0
-
-		try:
-			msg, server = sock.recvfrom(1024)
-		except socket.error:
-			send_read_request(filename)
-		else:
-			op = struct.unpack("!H", msg[0:2])[0]
-			
-			if op == 3:
-				packReceived = struct.unpack("!H", msg[2:4])[0]
-				print("Receiving from server: PACK ", packReceived)
-				if pack == packReceived:
-					pack += 1
-					size = len(msg)
-					dataLen = size - 4
-					data = struct.unpack("!"+str(dataLen)+"s", msg[4:size])[0]
-					f.write(data)
-			elif op == 5:
-				error_server(msg)
-				return
-			else:
-				print("There was an error in the receiving packets\n")
-				return
-
-		while 1:
-			try:
-				send_ack(pack)
-				msg, server = sock.recvfrom(1024)
-			except socket.error:
-				if pack == 0:
-					send_read_request(filename)
-			else:
-				op = struct.unpack("!H", msg[0:2])[0]
 		
-				if op == 3:
-					packReceived = struct.unpack("!H", msg[2:4])[0]
-					print("Receiving from server: PACK ", packReceived)
-					if pack == packReceived:
-						pack += 1
-						size = len(msg)
-						dataLen = size - 4
-						data = struct.unpack("!"+str(dataLen)+"s", msg[4:size])[0]
-						f.write(data)
-						if len(data) < 512:
-							send_ack(pack)
-							return
-				elif op == 5:
-					error_server(msg)
-					break
-				else:
-					print("There was an error in the receiving packets\n")
-					break
-
 initialization_handler()
 destination = argv[2]
 port = int(argv[4])
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sec = 3
+sec = 1
 usec = 10000
 timevalue = struct.pack('ll', sec, usec)
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVTIMEO, timevalue)
@@ -232,3 +235,4 @@ while 1:
 	
 
 sock.close()
+
