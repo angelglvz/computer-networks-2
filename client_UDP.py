@@ -138,8 +138,8 @@ def send_data(filename,sock,destination,port):					#This method is in charge of 
 				packReceived = struct.unpack("!H", msg[2:4])[0]			#and we increment the number of different data packs sent.
 				print("<-- Receiving from server: ACK", packReceived)
 				bytestosend = f.read(512)
-				send_data_pack(bytestosend, packReceived,sock,destination,port)
 				pack += 1
+				send_data_pack(bytestosend, pack,sock,destination,port)
 			elif op == 5:
 				error_server(msg)
 				return 
@@ -155,7 +155,7 @@ def send_data(filename,sock,destination,port):					#This method is in charge of 
 				if pack == 0:										#we send another time the write request and if not, we send the same data pack we have sent before.
 					send_write_request(filename,sock,destination,port)
 				else:
-					send_data_pack(bytestosend, packReceived,sock,destination,port)
+					send_data_pack(bytestosend, pack,sock,destination,port)
 			else:
 				op = struct.unpack("!H", msg[0:2])[0]
 				if op == 4:
@@ -166,10 +166,8 @@ def send_data(filename,sock,destination,port):					#This method is in charge of 
 							break
 						else:
 							bytestosend = f.read(512)
-							send_data_pack(bytestosend, packReceived,sock,destination,port)
 							pack += 1
-					else:
-						send_data_pack(bytestosend, packReceived,sock,destination,port)
+							send_data_pack(bytestosend, pack,sock,destination,port)
 				elif op == 5:
 					error_server(msg)
 					break
@@ -201,7 +199,7 @@ def receive_data(filename, sock, destination, port):						#This method is in cha
 			if op == 3:
 				packReceived = struct.unpack("!H", msg[2:4])[0]						#If we receive the first data pack, we send the first ack pack to the server				
 				print("<-- Receiving from server: PACK", packReceived)					#and we increment the number of different data packs received.	
-				if pack == packReceived:
+				if packReceived == pack+1:
 					pack += 1
 					size = len(msg)
 					dataLen = size - 4
@@ -209,11 +207,11 @@ def receive_data(filename, sock, destination, port):						#This method is in cha
 					f.write(data)			
 					if len(data) < 512:
 						execution_time = time() - begin_time
+						send_ack(packReceived,sock,destination,port)
 						print("------Reading time: %.10f seconds-----" %execution_time)
-						send_ack(pack,sock,destination,port)
 						return
 					else:
-						send_ack(pack,sock,destination,port)
+						send_ack(packReceived,sock,destination,port)
 			elif op == 5:
 				error_server(msg)
 				return
@@ -228,24 +226,24 @@ def receive_data(filename, sock, destination, port):						#This method is in cha
 				if pack == 0:														#we send another time the read request and if not, we send the same ack pack we have sent before.
 					send_read_request(filename,sock,destination,port)
 				else:
-					send_ack(pack,sock,destination,port)							
+					send_ack(packReceived,sock,destination,port)							
 			else:
 				op = struct.unpack("!H", msg[0:2])[0]
 		
 				if op == 3:
 					packReceived = struct.unpack("!H", msg[2:4])[0]
 					print("<-- Receiving from server: PACK", packReceived)				#If we have receive the last data pack, we send to the server the last data pack and we skip the loop. If not we send
-					if pack == packReceived:										#the next ack pack. If it is a data pack repeated, we send the last ack pack we send before.
+					if packReceived == pack + 1:										#the next ack pack. If it is a data pack repeated, we send the last ack pack we send before.
 						pack += 1
 						size = len(msg)
 						dataLen = size - 4
 						data = struct.unpack("!"+str(dataLen)+"s", msg[4:size])[0]
 						f.write(data)			
 						if len(data) < 512:
-							send_ack(pack,sock,destination,port)
+							send_ack(packReceived,sock,destination,port)
 							break
 						else:
-							send_ack(pack,sock,destination,port)
+							send_ack(packReceived,sock,destination,port)
 				elif op == 5:
 					error_server(msg)
 					break
