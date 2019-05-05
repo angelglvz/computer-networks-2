@@ -113,7 +113,7 @@ def receive_data(filename, sock):					#This method is in charge of receiving dat
 	else:
 		begin_time = time()							#Pack variable indicates the number of not repeated pack received from the server.
 		send_read_request(filename, sock)
-		pack=0	
+		pack=1
 		f=open(path_name,'wb')
 		while 1:
 			msg = sock.recv(516)
@@ -156,8 +156,8 @@ def send_data(filename, sock):						#This method is in charge of sending data wh
 					break
 				else:
 					bytestosend = f.read(512)
-					send_data_pack(bytestosend, pack, sock)
-					pack += 1			
+					pack += 1	
+					send_data_pack(bytestosend, pack, sock)		
 			elif op == TFTP_OPCODES['error']:								#If we receive an error message, we want to know what happened and we exit the loop.
 				error_server(msg)
 				break
