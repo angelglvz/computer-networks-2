@@ -101,8 +101,8 @@ def read_request(filename, sock, client):					#Used to perform a read request
 				break
 			else:
 				bytestosend = f.read(512)
-				send_data_pack(bytestosend, pack, sock, client)
 				pack += 1
+				send_data_pack(bytestosend, pack, sock, client)
 	else:										
 		send_error(1, sock, client)								#If the file doesn't exist in the server we send an error because we can't read this file.
 
@@ -112,7 +112,7 @@ def write_request(filename, sock, client):						#Used to do a write request
 		send_error(6, sock, client)
 	else:
 		f=open(path_name,'wb')
-		pack = 0
+		pack = 1
 		send_ack(pack, sock, client)							#First we send an ack to tell the client it is possible to send to the server this file.
 		while 1:
 			msg = sock.recv(516)
