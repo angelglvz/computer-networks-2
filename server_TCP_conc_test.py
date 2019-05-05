@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3.6
 "Usage: %s <port>"
 from socket import *
 from sys import *
