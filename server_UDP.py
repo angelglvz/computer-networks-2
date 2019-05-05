@@ -99,7 +99,7 @@ def read_request(filename, client, sock):				#Used to do a read request
 	if os.path.isfile(path_name):
 		size = os.path.getsize (path_name) 
 		num_packs = math.ceil(size/512)
-		pack = 0
+		pack = 1
 		f=open(path_name,'rb')
 		bytestosend = f.read(512)
 
@@ -114,8 +114,8 @@ def read_request(filename, client, sock):				#Used to do a read request
 				if op == 4:
 					packReceived = struct.unpack("!H", msg[2:4])[0]
 					print("<-- Receiving from client: ACK", packReceived)
-					if packReceived == (pack + 1):						#If the number of pack received is equal to the next packet we have to send then we read from the file the data we need.
-						if num_packs == pack + 1:
+					if packReceived == pack:						#If the number of pack received is equal to the next packet we have to send then we read from the file the data we need.
+						if num_packs == pack:
 							break
 						else:
 							bytestosend = f.read(512)
@@ -152,7 +152,7 @@ def write_request(filename, client, sock):									#Used to do a write requests
 				if op == 3:
 					packReceived = struct.unpack("!H", msg[2:4])[0]
 					print("<-- Receiving from client: PACK", packReceived)
-					if pack == packReceived:										#If the number of received pack is equal to the number of sequence of
+					if packReceived == pack + 1:										#If the number of received pack is equal to the number of sequence of
 						pack += 1													#good packets received then we write the data of this packet in the file.
 						size = len(msg)
 						dataLen = size - 4
