@@ -187,7 +187,7 @@ def send_data(filename,sock,destination,port):					#This method is in charge of 
 					break
 
 		execution_time = time.time() - begin_time
-		print("------Reading time: %.10f seconds------" %execution_time)
+		print("------Writing time: %.10f seconds------" %execution_time)
 	else:
 		print('Error',1,':',server_error_msg[1])
 
